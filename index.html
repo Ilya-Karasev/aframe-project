@@ -10,7 +10,7 @@
             top: 10px;
             left: 10px;
             color: white;
-            font-size: 30px; /* Увеличен размер шрифта для очков и таймера */
+            font-size: 30px;
             font-family: Arial, sans-serif;
             z-index: 100;
         }
@@ -20,14 +20,14 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 40px; /* Увеличен размер шрифта для надписи GAME OVER */
+            font-size: 40px;
             font-family: Arial, sans-serif;
             text-align: center;
             z-index: 100;
             display: none;
         }
         #gameOver.red {
-            color: red; /* Красный цвет для "Ты даже не старался" */
+            color: red;
         }
         #restartButton {
             position: absolute;
@@ -50,8 +50,8 @@
         <div id="scoreText">Очки: 0</div>
         <div id="timerText">Время: 30</div>
     </div>
-    <div id="gameOver"></div> <!-- Блок для надписи GAME OVER -->
-    <button id="restartButton">Попробовать еще раз</button> <!-- Кнопка для перезапуска -->
+    <div id="gameOver"></div>
+    <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics>
         <!-- Камера -->
@@ -69,7 +69,7 @@
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
 
         <!-- 3D-модель для сбора (заменена на model.glb) -->
-        <a-entity gltf-model="model.glb" position="0 0.5 -3"></a-entity>
+        <a-entity gltf-model="model.glb" position="0 0.5 -3" id="collectible" class="collectible" event-set__mouseenter="_event: mouseenter; scale: 1.2 1.2 1.2" event-set__mouseleave="_event: mouseleave; scale: 1 1 1"></a-entity>
 
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
@@ -115,27 +115,24 @@
             } else {
                 clearInterval(timerInterval);
                 gameOver = true;
-                // Показать GAME OVER с соответствующим сообщением в зависимости от очков
                 if (score === 0) {
-                    gameOverText.classList.add("red"); // Красный цвет для "Ты даже не старался"
+                    gameOverText.classList.add("red");
                     gameOverText.innerText = "Ну, бывает...";
                 } else {
                     gameOverText.classList.remove("red");
                     gameOverText.innerText = `Неплохо! Очки: ${score}`;
                 }
                 gameOverText.style.display = "block";
-                restartButton.style.display = "block"; // Показываем кнопку перезапуска
+                restartButton.style.display = "block";
             }
         }
 
         function createCollectible(x, z) {
             if (gameOver) return;
-            let obj = document.createElement("a-box");
+            let obj = document.createElement("a-entity");
+            obj.setAttribute("gltf-model", "model.glb");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
-            obj.setAttribute("color", "#FFD700");
-            obj.setAttribute("dynamic-body", "mass: 0.1");
             obj.classList.add("collectible");
-            collectibles.appendChild(obj);
             obj.addEventListener("click", () => {
                 if (!gameOver) {
                     score += 10;
@@ -144,15 +141,14 @@
                 }
                 obj.remove();
             });
-            setTimeout(() => obj.remove(), 1000);
+            collectibles.appendChild(obj);
         }
-        
+
         // Ограничение движения игрока
-        const PLATFORM_SIZE = 10; // Размер платформы (платформа 10x10)
+        const PLATFORM_SIZE = 10;
 
         function constrainPlayerPosition() {
             let position = player.getAttribute("position");
-            // Ограничиваем игрока внутри границ платформы
             if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
             if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
             if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
@@ -160,20 +156,16 @@
             player.setAttribute("position", position);
         }
 
-        // Обновляем позицию игрока каждый кадр
-        setInterval(constrainPlayerPosition, 16); // Проверка позиции 60 раз в секунду
+        setInterval(constrainPlayerPosition, 16); // 60 FPS
 
-        // Функция для случайного появления объектов
         function spawnRandomCollectible() {
-            const x = Math.random() * 8 - 4; // Генерируем случайную позицию по оси X
-            const z = Math.random() * 8 - 4; // Генерируем случайную позицию по оси Z
+            const x = Math.random() * 8 - 4;
+            const z = Math.random() * 8 - 4;
             createCollectible(x, z);
         }
 
-        // Кнопка перезапуска игры
         restartButton.addEventListener("click", restartGame);
 
-        // Начало игры
         restartGame();
     </script>
 </body>
