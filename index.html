@@ -1,57 +1,172 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Игра на A-Frame</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-physics-system/master/dist/aframe-physics-system.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 30px;
+            font-family: Arial, sans-serif;
+            z-index: 100;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 40px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 100;
+            display: none;
+        }
+        #gameOver.red {
+            color: red;
+        }
+        #restartButton {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 30px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+            display: none;
+        }
+    </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="sourceType: webcam;">
+<body>
+    <div id="hud">
+        <div id="scoreText">Очки: 0</div>
+        <div id="timerText">Время: 30</div>
+    </div>
+    <div id="gameOver"></div>
+    <button id="restartButton">Попробовать еще раз</button>
+
+    <a-scene physics>
         <!-- Камера -->
-        <a-entity camera position="0 1.6 0" look-controls>
-            <a-entity cursor="fuse: true; fuseTimeout: 500"
-                      geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                      position="0 0 -1"
-                      material="color: white; shader: flat">
-            </a-entity>
+        <a-entity id="player" camera look-controls wasd-controls position="0 1.6 0">
+            <a-entity cursor="rayOrigin: mouse"></a-entity>
         </a-entity>
 
-        <!-- Текст -->
-        <a-entity id="scoreText" position="0 2 -3"
-                  text="value: Очки: 0; align: center; color: white; width: 4;"></a-entity>
-
         <!-- Небо -->
-        <a-sky color="#87CEEB"></a-sky>
+        <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
+        
+        <!-- Земля с новой текстурой -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" src="ground-texture.jpg" repeat="5 5" static-body></a-plane>
 
-        <!-- Земля -->
-        <a-entity geometry="primitive: plane; width: 10; height: 10"
-                  material="color: green; repeat: 4 4; src: ground-texture.jpg"
-                  rotation="-90 0 0"></a-entity>
+        <!-- Свет -->
+        <a-light type="directional" position="2 4 3" intensity="1"></a-light>
 
-        <!-- 3D-объект (можно заменить на свою модель из Blender) -->
-        <a-entity id="collectible" gltf-model="model.glb"
-                  position="0 1 -3" scale="1 1 1"
-                  animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"
-                  class="clickable"></a-entity>
+        <!-- 3D-модель для сбора (заменена на model.glb) -->
+        <a-entity gltf-model="model.gltf" position="0 0.5 -3" id="collectible" class="collectible" event-set__mouseenter="_event: mouseenter; scale: 1.2 1.2 1.2" event-set__mouseleave="_event: mouseleave; scale: 1 1 1"></a-entity>
 
-        <!-- Аудио -->
-        <a-sound id="collectSound" src="collect.mp3" preload="auto"></a-sound>
+        <!-- Сборные объекты -->
+        <a-entity id="collectibles"></a-entity>
     </a-scene>
 
     <script>
         let score = 0;
+        let timeLeft = 30;
+        let gameOver = false;
+        const collectibles = document.getElementById("collectibles");
+        const scoreText = document.getElementById("scoreText");
+        const timerText = document.getElementById("timerText");
+        const gameOverText = document.getElementById("gameOver");
+        const player = document.getElementById("player");
+        const restartButton = document.getElementById("restartButton");
 
-        document.querySelector('#collectible').addEventListener('click', function () {
-            score += 10;
-            document.querySelector('#scoreText').setAttribute('text', 'value', 'Очки: ' + score);
-            document.querySelector('#collectSound').components.sound.playSound();
-            this.setAttribute('visible', false);
-            setTimeout(() => {
-                this.setAttribute('visible', true);
-            }, 2000);
-        });
+        // Функция для начала новой игры
+        function restartGame() {
+            score = 0;
+            timeLeft = 30;
+            gameOver = false;
+            scoreText.innerText = `Очки: ${score}`;
+            timerText.innerText = `Время: ${timeLeft}`;
+            gameOverText.style.display = "none";
+            restartButton.style.display = "none";
+            
+            // Очищаем все объекты на платформе
+            while (collectibles.firstChild) {
+                collectibles.removeChild(collectibles.firstChild);
+            }
+
+            // Перезапускаем таймер
+            timerInterval = setInterval(updateTimer, 1000);
+            // Включаем создание объектов
+            setInterval(spawnRandomCollectible, Math.random() * 4000 + 1000);
+        }
+
+        // Функция для обновления таймера
+        function updateTimer() {
+            if (timeLeft > 0 && !gameOver) {
+                timeLeft--;
+                timerText.innerText = `Время: ${timeLeft}`;
+            } else {
+                clearInterval(timerInterval);
+                gameOver = true;
+                if (score === 0) {
+                    gameOverText.classList.add("red");
+                    gameOverText.innerText = "Ну, бывает...";
+                } else {
+                    gameOverText.classList.remove("red");
+                    gameOverText.innerText = `Неплохо! Очки: ${score}`;
+                }
+                gameOverText.style.display = "block";
+                restartButton.style.display = "block";
+            }
+        }
+
+        function createCollectible(x, z) {
+            if (gameOver) return;
+            let obj = document.createElement("a-entity");
+            obj.setAttribute("gltf-model", "model.glb");
+            obj.setAttribute("position", `${x} 0.5 ${z}`);
+            obj.classList.add("collectible");
+            obj.addEventListener("click", () => {
+                if (!gameOver) {
+                    score += 10;
+                    scoreText.innerText = `Очки: ${score}`;
+                    new Audio("collect.mp3").play();
+                }
+                obj.remove();
+            });
+            collectibles.appendChild(obj);
+        }
+
+        // Ограничение движения игрока
+        const PLATFORM_SIZE = 10;
+
+        function constrainPlayerPosition() {
+            let position = player.getAttribute("position");
+            if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
+            if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
+            if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
+            if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
+            player.setAttribute("position", position);
+        }
+
+        setInterval(constrainPlayerPosition, 16); // 60 FPS
+
+        function spawnRandomCollectible() {
+            const x = Math.random() * 8 - 4;
+            const z = Math.random() * 8 - 4;
+            createCollectible(x, z);
+        }
+
+        restartButton.addEventListener("click", restartGame);
+
+        restartGame();
     </script>
 </body>
 </html>
