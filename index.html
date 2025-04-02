@@ -61,14 +61,15 @@
 
         <!-- Небо -->
         <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
-        <!-- Земля -->
+        
+        <!-- Земля с новой текстурой -->
         <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" src="ground-texture.jpg" repeat="5 5" static-body></a-plane>
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
 
-        <!-- 3D-модель -->
-        <a-entity glb-model="model.glb" position="0 0.5 -3"></a-entity>
+        <!-- 3D-модель для сбора (заменена на model.glb) -->
+        <a-entity gltf-model="model.glb" position="0 0.5 -3"></a-entity>
 
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
@@ -158,8 +159,6 @@
             if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
             player.setAttribute("position", position);
         }
-
-
 
         // Обновляем позицию игрока каждый кадр
         setInterval(constrainPlayerPosition, 16); // Проверка позиции 60 раз в секунду
