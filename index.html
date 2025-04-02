@@ -1,57 +1,40 @@
 <!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Игра на A-Frame</title>
+<html>
+  <head>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
-</head>
-<body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="sourceType: webcam;">
-        <!-- Камера -->
-        <a-entity camera position="0 1.6 0" look-controls>
-            <a-entity cursor="fuse: true; fuseTimeout: 500"
-                      geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                      position="0 0 -1"
-                      material="color: white; shader: flat">
-            </a-entity>
-        </a-entity>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
+      <!-- Камера с GPS -->
+      <a-camera gps-camera rotation-reader>
+        <!-- Счётчик очков перед камерой -->
+        <a-text id="score" value="Счет: 0" position="0 1 -3" width="4" color="white"></a-text>
+      </a-camera>
 
-        <!-- Текст -->
-        <a-entity id="scoreText" position="0 2 -3"
-                  text="value: Очки: 0; align: center; color: white; width: 4;"></a-entity>
+      <!-- Земля с текстурой -->
+      <a-plane gps-entity-place="latitude: 37.7749; longitude: -122.4194" rotation="-90 0 0" width="50" height="50" 
+               material="src: ground-texture.jpg"></a-plane>
 
-        <!-- Небо -->
-        <a-sky color="#87CEEB"></a-sky>
+      <!-- 3D-модель из Blender -->
+      <a-entity gps-entity-place="latitude: 37.7749; longitude: -122.4194">
+        <a-gltf-model id="collectible" src="model.glb"
+                      position="0 1 0" scale="1 1 1"
+                      animation="property: position; to: 0 1.5 0; dur: 1000; dir: alternate; loop: true">
+        </a-gltf-model>
+      </a-entity>
 
-        <!-- Земля -->
-        <a-entity geometry="primitive: plane; width: 10; height: 10"
-                  material="color: green; repeat: 4 4; src: ground-texture.jpg"
-                  rotation="-90 0 0"></a-entity>
+      <!-- Свет -->
+      <a-light type="directional" position="1 1 1"></a-light>
 
-        <!-- 3D-объект (можно заменить на свою модель из Blender) -->
-        <a-entity id="collectible" gltf-model="model.glb"
-                  position="0 1 -3" scale="1 1 1"
-                  animation="property: rotation; to: 0 360 0; loop: true; dur: 3000"
-                  class="clickable"></a-entity>
-
-        <!-- Аудио -->
-        <a-sound id="collectSound" src="collect.mp3" preload="auto"></a-sound>
-    </a-scene>
-
-    <script>
+      <script>
         let score = 0;
-
         document.querySelector('#collectible').addEventListener('click', function () {
-            score += 10;
-            document.querySelector('#scoreText').setAttribute('text', 'value', 'Очки: ' + score);
-            document.querySelector('#collectSound').components.sound.playSound();
-            this.setAttribute('visible', false);
-            setTimeout(() => {
-                this.setAttribute('visible', true);
-            }, 2000);
+          score += 10;
+          document.querySelector('#score').setAttribute('value', 'Счет: ' + score);
+          this.setAttribute('visible', false);
         });
-    </script>
-</body>
+      </script>
+    </a-scene>
+  </body>
 </html>
