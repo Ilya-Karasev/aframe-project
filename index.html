@@ -47,29 +47,43 @@
 </head>
 <body>
     <div id="hud">
-        <div id="scoreText">Монеты: 0</div>
+        <div id="scoreText">Очки: 0</div>
         <div id="timerText">Время: 30</div>
     </div>
     <div id="gameOver"></div>
     <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics="debug: true">
-        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body="mass: 5;">
-            <a-entity id="camera" camera position="0 0 0"></a-entity>
+        <!-- Камера с управлением WASD -->
+        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body="mass: 5; friction: 0.5; restitution: 0.5;">
+            <a-entity id="camera" camera position="0 0 0">
+                <a-cursor></a-cursor>
+            </a-entity>
         </a-entity>
 
+        <!-- Небо -->
         <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
-        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="color: green;" static-body></a-plane>
+        
+        <!-- Земля -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="src: url(ground-texture.jpg); repeat: 5 5;" static-body></a-plane>
 
+        <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
+        <a-light type="point" position="0 5 0" intensity="2" color="#ff6600"></a-light>
+        <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light>
 
+        <!-- Забор по краям платформы -->
+        <a-entity position="-5 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="5 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="0 0 -5" rotation="0 0 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="0 0 5" rotation="0 180 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+
+        <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
-        <a-entity id="house" gltf-model="model.gltf"></a-entity>
     </a-scene>
 
     <script>
         let score = 0;
-        let totalCoins = 0;
         let timeLeft = 30;
         let gameOver = false;
         const collectibles = document.getElementById("collectibles");
@@ -79,14 +93,52 @@
         const player = document.getElementById("player");
         const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
-        const house = document.getElementById("house");
+
+        function createCollectible(x, z) {
+            if (gameOver) return;
+            let obj = document.createElement("a-entity");
+            obj.setAttribute("gltf-model", "coin.gltf");
+            obj.setAttribute("position", `${x} 0.5 ${z}`);
+            obj.classList.add("collectible");
+            collectibles.appendChild(obj);
+        }
+
+        function checkCollectibles() {
+            if (gameOver) return;
+
+            let playerPos = player.getAttribute("position");
+            let collectibleElements = document.getElementsByClassName("collectible");
+
+            for (let i = collectibleElements.length - 1; i >= 0; i--) {
+                let collectible = collectibleElements[i];
+                let collectiblePos = collectible.getAttribute("position");
+
+                let dx = playerPos.x - collectiblePos.x;
+                let dz = playerPos.z - collectiblePos.z;
+                let distance = Math.sqrt(dx * dx + dz * dz);
+
+                if (distance < 1.5) {
+                    score++;
+                    scoreText.innerText = `Очки: ${score}`;
+                    new Audio("collect.mp3").play();
+                    collectible.remove();
+                }
+            }
+        }
+
+        setInterval(checkCollectibles, 100); // Проверяем каждую 0.1 секунду
+
+        function spawnRandomCollectible() {
+            const x = Math.random() * 8 - 4;
+            const z = Math.random() * 8 - 4;
+            createCollectible(x, z);
+        }
 
         function restartGame() {
             score = 0;
             timeLeft = 30;
             gameOver = false;
-            totalCoins = Math.floor(Math.random() * 8) + 3;
-            scoreText.innerText = `Монеты: ${score}/${totalCoins}`;
+            scoreText.innerText = `Очки: ${score}`;
             timerText.innerText = `Время: ${timeLeft}`;
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
@@ -95,17 +147,8 @@
                 collectibles.removeChild(collectibles.firstChild);
             }
 
-            for (let i = 0; i < totalCoins; i++) {
-                let x = Math.random() * 8 - 4;
-                let z = Math.random() * 8 - 4;
-                createCollectible(x, z);
-            }
-
-            let houseX = Math.random() * 8 - 4;
-            let houseZ = Math.random() * 8 - 4;
-            house.setAttribute("position", `${houseX} 0 ${houseZ}`);
-
             timerInterval = setInterval(updateTimer, 1000);
+            setInterval(spawnRandomCollectible, Math.random() * 4000 + 1000);
         }
 
         function updateTimer() {
@@ -114,57 +157,13 @@
                 timerText.innerText = `Время: ${timeLeft}`;
             } else {
                 clearInterval(timerInterval);
-                endGame(false);
+                gameOver = true;
+                gameOverText.innerText = score === 0 ? "Ну, бывает..." : `Неплохо! Очки: ${score}`;
+                gameOverText.classList.toggle("red", score === 0);
+                gameOverText.style.display = "block";
+                restartButton.style.display = "block";
             }
         }
-
-        function createCollectible(x, z) {
-            let obj = document.createElement("a-entity");
-            obj.setAttribute("gltf-model", "coin.gltf");
-            obj.setAttribute("position", `${x} 0.5 ${z}`);
-            obj.classList.add("collectible");
-            obj.addEventListener("click", () => {
-                if (!gameOver) {
-                    score++;
-                    scoreText.innerText = `Монеты: ${score}/${totalCoins}`;
-                    obj.remove();
-                }
-            });
-            collectibles.appendChild(obj);
-        }
-
-        function checkWin() {
-            if (score === totalCoins) {
-                endGame(true);
-            }
-        }
-
-        function endGame(win) {
-            gameOver = true;
-            if (win) {
-                gameOverText.innerText = `Победа! Все монеты собраны!`;
-            } else {
-                gameOverText.innerText = `Проигрыш. Собрано ${score}/${totalCoins} монет.`;
-                gameOverText.classList.add("red");
-            }
-            gameOverText.style.display = "block";
-            restartButton.style.display = "block";
-        }
-
-        setInterval(() => {
-            if (gameOver) return;
-            let playerPos = player.getAttribute("position");
-            let housePos = house.getAttribute("position");
-            let distance = Math.sqrt(
-                Math.pow(playerPos.x - housePos.x, 2) + 
-                Math.pow(playerPos.z - housePos.z, 2)
-            );
-            if (distance < 1.5) {
-                checkWin();
-            }
-        }, 500);
-
-        const PLATFORM_SIZE = 10;
 
         function constrainPlayerPosition() {
             let position = player.getAttribute("position");
@@ -174,35 +173,6 @@
             if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
             player.setAttribute("position", position);
         }
-
-        setInterval(constrainPlayerPosition, 16);
-
-        let yaw = 0, pitch = 0;
-        const sensitivity = 0.2;
-
-        document.body.addEventListener("click", () => {
-            document.body.requestPointerLock();
-        });
-
-        document.addEventListener("pointerlockchange", () => {
-            if (document.pointerLockElement === document.body) {
-                document.addEventListener("mousemove", updateCamera);
-            } else {
-                document.removeEventListener("mousemove", updateCamera);
-            }
-        });
-
-        // Свободный поворот камеры
-        let yaw = 0, pitch = 0;
-        const sensitivity = 0.2;
-        document.addEventListener("mousemove", (event) => {
-            yaw -= event.movementX * sensitivity;
-            pitch -= event.movementY * sensitivity;
-            pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
-            
-            player.setAttribute("rotation", `0 ${yaw} 0`);
-            camera.setAttribute("rotation", `${pitch} 0 0`);
-        });
 
         restartButton.addEventListener("click", restartGame);
         restartGame();
