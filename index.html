@@ -1,4 +1,3 @@
-Дополни код, добавив физику прыжка при нажатии на пробел:
 <!DOCTYPE html>
 <html>
 <head>
@@ -56,7 +55,7 @@
 
     <a-scene physics>
         <!-- Камера с управлением WASD -->
-        <a-entity id="player" position="0 1.6 0" wasd-controls>
+        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body>
             <a-entity id="camera" camera position="0 0 0">
                 <a-cursor></a-cursor>
             </a-entity>
@@ -70,6 +69,8 @@
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
+        <a-light type="point" position="0 5 0" intensity="2" color="#ff6600"></a-light> <!-- Точечный свет -->
+        <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light> <!-- Ambient свет для общего освещения -->
 
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
@@ -86,6 +87,23 @@
         const player = document.getElementById("player");
         const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
+
+        // Физика прыжка
+        let isJumping = false;
+        let jumpPower = 5;
+        const playerBody = player.getAttribute("dynamic-body");
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Space" && !isJumping) {
+                isJumping = true;
+                let position = player.getAttribute("position");
+                position.y += jumpPower;
+                player.setAttribute("position", position);
+                setTimeout(() => {
+                    isJumping = false; // Завершаем прыжок через 1 секунду
+                }, 1000); 
+            }
+        });
 
         // Свободный поворот камеры
         let yaw = 0, pitch = 0;
