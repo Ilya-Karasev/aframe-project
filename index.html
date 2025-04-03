@@ -54,27 +54,17 @@
     <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics="debug: true">
-        <!-- Камера с управлением WASD -->
         <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body="mass: 5;">
-            <a-entity id="camera" camera position="0 0 0">
-                <a-cursor></a-cursor>
-            </a-entity>
+            <a-entity id="camera" camera position="0 0 0"></a-entity>
         </a-entity>
 
-        <!-- Небо -->
         <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
-
-        <!-- Земля -->
         <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="color: green;" static-body></a-plane>
 
-        <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
 
-        <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
-
-        <!-- Дом -->
-        <a-entity id="house" gltf-model="house.gltf"></a-entity>
+        <a-entity id="house" gltf-model="model.gltf"></a-entity>
     </a-scene>
 
     <script>
@@ -87,6 +77,7 @@
         const timerText = document.getElementById("timerText");
         const gameOverText = document.getElementById("gameOver");
         const player = document.getElementById("player");
+        const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
         const house = document.getElementById("house");
 
@@ -94,30 +85,26 @@
             score = 0;
             timeLeft = 30;
             gameOver = false;
-            totalCoins = Math.floor(Math.random() * 8) + 3; // 3-10 монет
+            totalCoins = Math.floor(Math.random() * 8) + 3;
             scoreText.innerText = `Монеты: ${score}/${totalCoins}`;
             timerText.innerText = `Время: ${timeLeft}`;
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
 
-            // Очищаем объекты
             while (collectibles.firstChild) {
                 collectibles.removeChild(collectibles.firstChild);
             }
 
-            // Размещаем монеты
             for (let i = 0; i < totalCoins; i++) {
                 let x = Math.random() * 8 - 4;
                 let z = Math.random() * 8 - 4;
                 createCollectible(x, z);
             }
 
-            // Размещаем дом
             let houseX = Math.random() * 8 - 4;
             let houseZ = Math.random() * 8 - 4;
             house.setAttribute("position", `${houseX} 0 ${houseZ}`);
 
-            // Запускаем таймер
             timerInterval = setInterval(updateTimer, 1000);
         }
 
@@ -164,7 +151,6 @@
             restartButton.style.display = "block";
         }
 
-        // Проверка, дошел ли игрок до дома
         setInterval(() => {
             if (gameOver) return;
             let playerPos = player.getAttribute("position");
@@ -178,7 +164,6 @@
             }
         }, 500);
 
-        // Ограничение движения игрока
         const PLATFORM_SIZE = 10;
 
         function constrainPlayerPosition() {
@@ -190,7 +175,30 @@
             player.setAttribute("position", position);
         }
 
-        setInterval(constrainPlayerPosition, 16); // 60 FPS
+        setInterval(constrainPlayerPosition, 16);
+
+        let yaw = 0, pitch = 0;
+        const sensitivity = 0.2;
+
+        document.body.addEventListener("click", () => {
+            document.body.requestPointerLock();
+        });
+
+        document.addEventListener("pointerlockchange", () => {
+            if (document.pointerLockElement === document.body) {
+                document.addEventListener("mousemove", updateCamera);
+            } else {
+                document.removeEventListener("mousemove", updateCamera);
+            }
+        });
+
+        function updateCamera(event) {
+            yaw -= event.movementX * sensitivity;
+            pitch -= event.movementY * sensitivity;
+            pitch = Math.max(-90, Math.min(90, pitch));
+            player.setAttribute("rotation", `0 ${yaw} 0`);
+            camera.setAttribute("rotation", `${pitch} 0 0`);
+        }
 
         restartButton.addEventListener("click", restartGame);
         restartGame();
