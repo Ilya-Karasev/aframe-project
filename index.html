@@ -4,7 +4,7 @@
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/donmccurdy/aframe-physics-system/master/dist/aframe-physics-system.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
+        body { margin: 0; overflow: hidden; cursor: none; }
         #hud {
             position: absolute;
             top: 10px;
@@ -54,23 +54,20 @@
     <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics>
-        <!-- Камера -->
-        <a-entity id="player" camera look-controls wasd-controls position="0 1.6 0">
-            <a-entity cursor="rayOrigin: mouse"></a-entity>
+        <!-- Камера с пользовательским контроллером -->
+        <a-entity id="player" position="0 1.6 0">
+            <a-entity id="camera" camera position="0 0 0"></a-entity>
         </a-entity>
 
         <!-- Небо -->
         <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
         
-        <!-- Земля с новой текстурой -->
+        <!-- Земля -->
         <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="src: url(ground-texture.jpg); repeat: 5 5;" static-body></a-plane>
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
 
-        <!-- 3D-модель для сбора (заменена на model.glb) -->
-<!--         <a-entity gltf-model="model.gltf" position="0 0.5 -3" id="collectible" class="collectible" event-set__mouseenter="_event: mouseenter; scale: 1.2 1.2 1.2" event-set__mouseleave="_event: mouseleave; scale: 1 1 1"></a-entity>
- -->
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
     </a-scene>
@@ -84,7 +81,20 @@
         const timerText = document.getElementById("timerText");
         const gameOverText = document.getElementById("gameOver");
         const player = document.getElementById("player");
+        const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
+
+        // Свободный поворот камеры
+        let yaw = 0, pitch = 0;
+        const sensitivity = 0.2;
+        document.addEventListener("mousemove", (event) => {
+            yaw -= event.movementX * sensitivity;
+            pitch -= event.movementY * sensitivity;
+            pitch = Math.max(-90, Math.min(90, pitch)); // Ограничиваем угол наклона камеры
+            
+            player.setAttribute("rotation", `0 ${yaw} 0`);
+            camera.setAttribute("rotation", `${pitch} 0 0`);
+        });
 
         // Функция для начала новой игры
         function restartGame() {
@@ -167,38 +177,6 @@
         restartButton.addEventListener("click", restartGame);
 
         restartGame();
-
-            let isMouseDown = false;
-            let prevMouseX = 0;
-            let prevMouseY = 0;
-            let rotation = { x: 0, y: 0 };
-        
-            document.addEventListener("mousedown", (event) => {
-                isMouseDown = true;
-                prevMouseX = event.clientX;
-                prevMouseY = event.clientY;
-            });
-        
-            document.addEventListener("mouseup", () => {
-                isMouseDown = false;
-            });
-        
-            document.addEventListener("mousemove", (event) => {
-                if (!isMouseDown) return;
-        
-                const sensitivity = 0.2;
-                const deltaX = event.clientX - prevMouseX;
-                const deltaY = event.clientY - prevMouseY;
-        
-                rotation.y -= deltaX * sensitivity;
-                rotation.x -= deltaY * sensitivity;
-                rotation.x = Math.max(-90, Math.min(90, rotation.x)); // Ограничение вертикального угла
-        
-                player.setAttribute("rotation", `${rotation.x} ${rotation.y} 0`);
-        
-                prevMouseX = event.clientX;
-                prevMouseY = event.clientY;
-            });
     </script>
 </body>
 </html>
