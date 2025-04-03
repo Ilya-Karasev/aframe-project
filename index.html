@@ -171,6 +171,20 @@
             createCollectible(x, z);
         }
 
+        // Ограничение движения игрока
+        const PLATFORM_SIZE = 10;
+
+        function constrainPlayerPosition() {
+            let position = player.getAttribute("position");
+            if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
+            if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
+            if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
+            if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
+            player.setAttribute("position", position);
+        }
+
+        setInterval(constrainPlayerPosition, 16); // 60 FPS
+
         restartButton.addEventListener("click", restartGame);
         restartGame();
     </script>
