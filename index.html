@@ -73,10 +73,10 @@
         <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light> <!-- Ambient свет для общего освещения -->
 
         <!-- Забор по краям платформы -->
-        <a-entity position="-9 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-        <a-entity position="9 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-        <a-entity position="0 0 -9" rotation="0 0 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-        <a-entity position="0 0 9" rotation="0 180 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="-5 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="5 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="0 0 -5" rotation="0 0 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="0 0 5" rotation="0 180 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
 
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
@@ -175,7 +175,7 @@
         function createCollectible(x, z) {
             if (gameOver) return;
             let obj = document.createElement("a-entity");
-            obj.setAttribute("gltf-model", "model.glb");
+            obj.setAttribute("gltf-model", "coin.glb");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
