@@ -161,7 +161,7 @@
         function createCollectible(x, z) {
             if (gameOver) return;
             let obj = document.createElement("a-entity");
-            obj.setAttribute("gltf-model", "coin.glb");
+            obj.setAttribute("gltf-model", "coin.gltf");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
