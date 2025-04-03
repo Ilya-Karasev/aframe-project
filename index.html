@@ -53,9 +53,9 @@
     <div id="gameOver"></div>
     <button id="restartButton">Попробовать еще раз</button>
 
-    <a-scene physics>
+    <a-scene physics="debug: true">
         <!-- Камера с управлением WASD -->
-        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body>
+        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body="mass: 5; friction: 0.5; restitution: 0.5;">
             <a-entity id="camera" camera position="0 0 0">
                 <a-cursor></a-cursor>
             </a-entity>
@@ -91,17 +91,25 @@
         // Физика прыжка
         let isJumping = false;
         let jumpPower = 5;
-        const playerBody = player.getAttribute("dynamic-body");
+        let isOnGround = true;
 
         document.addEventListener("keydown", (event) => {
-            if (event.code === "Space" && !isJumping) {
+            if (event.code === "Space" && isOnGround) {
                 isJumping = true;
-                let position = player.getAttribute("position");
-                position.y += jumpPower;
-                player.setAttribute("position", position);
-                setTimeout(() => {
-                    isJumping = false; // Завершаем прыжок через 1 секунду
-                }, 1000); 
+                let playerBody = player.components["dynamic-body"];
+                if (playerBody) {
+                    // Применяем силу для прыжка
+                    playerBody.body.applyForce(new CANNON.Vec3(0, jumpPower, 0), playerBody.body.position);
+                    isOnGround = false;  // Запрещаем повторный прыжок, пока игрок в воздухе
+                }
+            }
+        });
+
+        // Обрабатываем столкновение с землей
+        player.addEventListener("collide", function (e) {
+            if (e.detail.body.id === "ground") {
+                isOnGround = true;  // Разрешаем следующий прыжок
+                isJumping = false;
             }
         });
 
