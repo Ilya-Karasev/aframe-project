@@ -72,6 +72,12 @@
         <a-light type="point" position="0 5 0" intensity="2" color="#ff6600"></a-light> <!-- Точечный свет -->
         <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light> <!-- Ambient свет для общего освещения -->
 
+        <!-- Забор по краям платформы -->
+        <a-entity position="-10 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="10 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="0 0 -10" rotation="0 0 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+        <a-entity position="0 0 10" rotation="0 180 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
+
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
     </a-scene>
@@ -121,8 +127,8 @@
             pitch -= event.movementY * sensitivity;
             pitch = Math.max(-90, Math.min(90, pitch)); // Ограничиваем угол наклона камеры
             
-            player.setAttribute("rotation", 0 ${yaw} 0);
-            camera.setAttribute("rotation", ${pitch} 0 0);
+            player.setAttribute("rotation", `0 ${yaw} 0`);
+            camera.setAttribute("rotation", `${pitch} 0 0`);
         });
 
         // Функция для начала новой игры
@@ -130,8 +136,8 @@
             score = 0;
             timeLeft = 30;
             gameOver = false;
-            scoreText.innerText = Очки: ${score};
-            timerText.innerText = Время: ${timeLeft};
+            scoreText.innerText = `Очки: ${score}`;
+            timerText.innerText = `Время: ${timeLeft}`;
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
             
@@ -150,7 +156,7 @@
         function updateTimer() {
             if (timeLeft > 0 && !gameOver) {
                 timeLeft--;
-                timerText.innerText = Время: ${timeLeft};
+                timerText.innerText = `Время: ${timeLeft}`;
             } else {
                 clearInterval(timerInterval);
                 gameOver = true;
@@ -159,7 +165,7 @@
                     gameOverText.innerText = "Ну, бывает...";
                 } else {
                     gameOverText.classList.remove("red");
-                    gameOverText.innerText = Неплохо! Очки: ${score};
+                    gameOverText.innerText = `Неплохо! Очки: ${score}`;
                 }
                 gameOverText.style.display = "block";
                 restartButton.style.display = "block";
@@ -170,12 +176,12 @@
             if (gameOver) return;
             let obj = document.createElement("a-entity");
             obj.setAttribute("gltf-model", "model.glb");
-            obj.setAttribute("position", ${x} 0.5 ${z});
+            obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
                     score += 1;
-                    scoreText.innerText = Очки: ${score};
+                    scoreText.innerText = `Очки: ${score}`;
                     new Audio("collect.mp3").play();
                 }
                 obj.remove();
