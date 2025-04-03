@@ -4,7 +4,7 @@
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/donmccurdy/aframe-physics-system/master/dist/aframe-physics-system.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; cursor: none; }
+        body { margin: 0; overflow: hidden; }
         #hud {
             position: absolute;
             top: 10px;
@@ -54,9 +54,11 @@
     <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics>
-        <!-- Камера с пользовательским контроллером -->
-        <a-entity id="player" position="0 1.6 0">
-            <a-entity id="camera" camera position="0 0 0"></a-entity>
+        <!-- Камера с управлением WASD -->
+        <a-entity id="player" position="0 1.6 0" wasd-controls>
+            <a-entity id="camera" camera position="0 0 0">
+                <a-cursor></a-cursor>
+            </a-entity>
         </a-entity>
 
         <!-- Небо -->
