@@ -192,13 +192,17 @@
             }
         });
 
-        function updateCamera(event) {
+        // Свободный поворот камеры
+        let yaw = 0, pitch = 0;
+        const sensitivity = 0.2;
+        document.addEventListener("mousemove", (event) => {
             yaw -= event.movementX * sensitivity;
             pitch -= event.movementY * sensitivity;
-            pitch = Math.max(-90, Math.min(90, pitch));
+            pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
+            
             player.setAttribute("rotation", `0 ${yaw} 0`);
             camera.setAttribute("rotation", `${pitch} 0 0`);
-        }
+        });
 
         restartButton.addEventListener("click", restartGame);
         restartGame();
