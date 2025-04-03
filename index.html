@@ -92,7 +92,7 @@
         document.addEventListener("mousemove", (event) => {
             yaw -= event.movementX * sensitivity;
             pitch -= event.movementY * sensitivity;
-            pitch = Math.max(-90, Math.min(90, pitch)); // Ограничиваем угол наклона камеры
+            pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
             
             player.setAttribute("rotation", `0 ${yaw} 0`);
             camera.setAttribute("rotation", `${pitch} 0 0`);
@@ -147,7 +147,7 @@
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
-                    score += 10;
+                    score += 1;
                     scoreText.innerText = `Очки: ${score}`;
                     new Audio("collect.mp3").play();
                 }
