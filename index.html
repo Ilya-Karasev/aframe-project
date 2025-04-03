@@ -53,9 +53,9 @@
     <div id="gameOver"></div>
     <button id="restartButton">Попробовать еще раз</button>
 
-    <a-scene physics="debug: true">
+    <a-scene physics>
         <!-- Камера с управлением WASD -->
-        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body="mass: 5; friction: 0.5; restitution: 0.5;">
+        <a-entity id="player" position="0 1.6 0" wasd-controls="fly: true" dynamic-body>
             <a-entity id="camera" camera position="0 0 0">
                 <a-cursor></a-cursor>
             </a-entity>
@@ -91,25 +91,17 @@
         // Физика прыжка
         let isJumping = false;
         let jumpPower = 5;
-        let isOnGround = true;
+        const playerBody = player.getAttribute("dynamic-body");
 
         document.addEventListener("keydown", (event) => {
-            if (event.code === "Space" && isOnGround) {
+            if (event.code === "Space" && !isJumping) {
                 isJumping = true;
-                let playerBody = player.components["dynamic-body"];
-                if (playerBody) {
-                    // Применяем силу для прыжка
-                    playerBody.body.applyForce(new CANNON.Vec3(0, jumpPower, 0), playerBody.body.position);
-                    isOnGround = false;  // Запрещаем повторный прыжок, пока игрок в воздухе
-                }
-            }
-        });
-
-        // Обрабатываем столкновение с землей
-        player.addEventListener("collide", function (e) {
-            if (e.detail.body.id === "ground") {
-                isOnGround = true;  // Разрешаем следующий прыжок
-                isJumping = false;
+                let position = player.getAttribute("position");
+                position.y += jumpPower;
+                player.setAttribute("position", position);
+                setTimeout(() => {
+                    isJumping = false; // Завершаем прыжок через 1 секунду
+                }, 1000); 
             }
         });
 
@@ -119,10 +111,10 @@
         document.addEventListener("mousemove", (event) => {
             yaw -= event.movementX * sensitivity;
             pitch -= event.movementY * sensitivity;
-            pitch = Math.max(-90, Math.min(90, pitch)); // Ограничиваем угол наклона камеры
+            pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
             
-            player.setAttribute("rotation", 0 ${yaw} 0);
-            camera.setAttribute("rotation", ${pitch} 0 0);
+            player.setAttribute("rotation", `0 ${yaw} 0`);
+            camera.setAttribute("rotation", `${pitch} 0 0`);
         });
 
         // Функция для начала новой игры
@@ -130,8 +122,8 @@
             score = 0;
             timeLeft = 30;
             gameOver = false;
-            scoreText.innerText = Очки: ${score};
-            timerText.innerText = Время: ${timeLeft};
+            scoreText.innerText = `Очки: ${score}`;
+            timerText.innerText = `Время: ${timeLeft}`;
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
             
@@ -150,7 +142,7 @@
         function updateTimer() {
             if (timeLeft > 0 && !gameOver) {
                 timeLeft--;
-                timerText.innerText = Время: ${timeLeft};
+                timerText.innerText = `Время: ${timeLeft}`;
             } else {
                 clearInterval(timerInterval);
                 gameOver = true;
@@ -159,7 +151,7 @@
                     gameOverText.innerText = "Ну, бывает...";
                 } else {
                     gameOverText.classList.remove("red");
-                    gameOverText.innerText = Неплохо! Очки: ${score};
+                    gameOverText.innerText = `Неплохо! Очки: ${score}`;
                 }
                 gameOverText.style.display = "block";
                 restartButton.style.display = "block";
@@ -170,12 +162,12 @@
             if (gameOver) return;
             let obj = document.createElement("a-entity");
             obj.setAttribute("gltf-model", "model.glb");
-            obj.setAttribute("position", ${x} 0.5 ${z});
+            obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
                     score += 1;
-                    scoreText.innerText = Очки: ${score};
+                    scoreText.innerText = `Очки: ${score}`;
                     new Audio("collect.mp3").play();
                 }
                 obj.remove();
