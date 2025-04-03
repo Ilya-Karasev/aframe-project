@@ -54,22 +54,23 @@
     <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics>
-        <!-- Камера с управлением WASD -->
-        <a-entity id="player" position="0 1.6 0" wasd-controls>
-            <a-entity id="camera" camera position="0 0 0">
-                <a-cursor></a-cursor>
-            </a-entity>
+        <!-- Камера -->
+        <a-entity id="player" camera look-controls wasd-controls position="0 1.6 0">
+            <a-entity cursor="rayOrigin: mouse"></a-entity>
         </a-entity>
 
         <!-- Небо -->
         <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
         
-        <!-- Земля -->
+        <!-- Земля с новой текстурой -->
         <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="src: url(ground-texture.jpg); repeat: 5 5;" static-body></a-plane>
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
 
+        <!-- 3D-модель для сбора (заменена на model.glb) -->
+<!--         <a-entity gltf-model="model.gltf" position="0 0.5 -3" id="collectible" class="collectible" event-set__mouseenter="_event: mouseenter; scale: 1.2 1.2 1.2" event-set__mouseleave="_event: mouseleave; scale: 1 1 1"></a-entity>
+ -->
         <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
     </a-scene>
@@ -83,28 +84,15 @@
         const timerText = document.getElementById("timerText");
         const gameOverText = document.getElementById("gameOver");
         const player = document.getElementById("player");
-        const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
-
-        // Свободный поворот камеры
-        let yaw = 0, pitch = 0;
-        const sensitivity = 0.2;
-        document.addEventListener("mousemove", (event) => {
-            yaw -= event.movementX * sensitivity;
-            pitch -= event.movementY * sensitivity;
-            pitch = Math.max(-90, Math.min(90, pitch)); // Ограничиваем угол наклона камеры
-            
-            player.setAttribute("rotation", `0 ${yaw} 0`);
-            camera.setAttribute("rotation", `${pitch} 0 0`);
-        });
 
         // Функция для начала новой игры
         function restartGame() {
             score = 0;
             timeLeft = 30;
             gameOver = false;
-            scoreText.innerText = `Очки: ${score}`;
-            timerText.innerText = `Время: ${timeLeft}`;
+            scoreText.innerText = Очки: ${score};
+            timerText.innerText = Время: ${timeLeft};
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
             
@@ -123,7 +111,7 @@
         function updateTimer() {
             if (timeLeft > 0 && !gameOver) {
                 timeLeft--;
-                timerText.innerText = `Время: ${timeLeft}`;
+                timerText.innerText = Время: ${timeLeft};
             } else {
                 clearInterval(timerInterval);
                 gameOver = true;
@@ -132,7 +120,7 @@
                     gameOverText.innerText = "Ну, бывает...";
                 } else {
                     gameOverText.classList.remove("red");
-                    gameOverText.innerText = `Неплохо! Очки: ${score}`;
+                    gameOverText.innerText = Неплохо! Очки: ${score};
                 }
                 gameOverText.style.display = "block";
                 restartButton.style.display = "block";
@@ -143,12 +131,12 @@
             if (gameOver) return;
             let obj = document.createElement("a-entity");
             obj.setAttribute("gltf-model", "model.glb");
-            obj.setAttribute("position", `${x} 0.5 ${z}`);
+            obj.setAttribute("position", ${x} 0.5 ${z});
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
                     score += 10;
-                    scoreText.innerText = `Очки: ${score}`;
+                    scoreText.innerText = Очки: ${score};
                     new Audio("collect.mp3").play();
                 }
                 obj.remove();
