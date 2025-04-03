@@ -53,26 +53,16 @@
     <div id="gameOver"></div>
     <button id="restartButton">Попробовать еще раз</button>
 
-    <a-scene physics>
-        <!-- Камера с управлением WASD -->
-        <a-entity id="player" position="0 1.6 0" wasd-controls>
-            <a-entity id="camera" camera position="0 0 0">
-                <a-cursor></a-cursor>
-            </a-entity>
-        </a-entity>
-
-        <!-- Игрок с физикой -->
+    <a-scene physics="gravity: -9.8">
+        <!-- Игрок с физическим телом -->
         <a-entity id="player" position="0 1.6 0" wasd-controls dynamic-body>
             <a-entity id="camera" camera position="0 0 0">
                 <a-cursor></a-cursor>
             </a-entity>
         </a-entity>
 
-        <!-- Небо -->
-        <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
-        
-        <!-- Земля -->
-        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="src: url(ground-texture.jpg); repeat: 5 5;" static-body></a-plane>
+        <!-- Платформа -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="color: green" static-body></a-plane>
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
@@ -85,42 +75,42 @@
         let score = 0;
         let timeLeft = 30;
         let gameOver = false;
+        const player = document.getElementById("player");
+        const camera = document.getElementById("camera");
         const collectibles = document.getElementById("collectibles");
         const scoreText = document.getElementById("scoreText");
         const timerText = document.getElementById("timerText");
         const gameOverText = document.getElementById("gameOver");
-        const player = document.getElementById("player");
-        const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
 
-        let isGrounded = false; // Флаг, стоит ли игрок на земле
+        let isGrounded = false;
 
-        // Проверка, находится ли игрок на земле
+        // Обработчик столкновений (проверяем, на земле ли игрок)
         player.addEventListener("collide", (e) => {
             if (e.detail.body.el.tagName === "A-PLANE") {
                 isGrounded = true;
             }
         });
 
-        // Прыжок по нажатию на пробел
+        // Прыжок при нажатии на Space
         document.addEventListener("keydown", (event) => {
             if (event.code === "Space" && isGrounded) {
-                player.body.applyImpulse(new CANNON.Vec3(0, 5, 0), new CANNON.Vec3(0, 0, 0));
-                isGrounded = false; // Запрещаем повторный прыжок до приземления
+                player.setAttribute("velocity", "0 5 0");
+                isGrounded = false; // Запрещаем повторный прыжок до касания земли
             }
         });
 
-        // Свободный поворот камеры
-        let yaw = 0, pitch = 0;
-        const sensitivity = 0.2;
-        document.addEventListener("mousemove", (event) => {
-            yaw -= event.movementX * sensitivity;
-            pitch -= event.movementY * sensitivity;
-            pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
-            
-            player.setAttribute("rotation", `0 ${yaw} 0`);
-            camera.setAttribute("rotation", `${pitch} 0 0`);
-        });
+        // Ограничение движения игрока
+        const PLATFORM_SIZE = 10;
+        function constrainPlayerPosition() {
+            let position = player.getAttribute("position");
+            if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
+            if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
+            if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
+            if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
+            player.setAttribute("position", position);
+        }
+        setInterval(constrainPlayerPosition, 16);
 
         // Функция для начала новой игры
         function restartGame() {
@@ -131,19 +121,15 @@
             timerText.innerText = `Время: ${timeLeft}`;
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
-            
-            // Очищаем все объекты на платформе
+
             while (collectibles.firstChild) {
                 collectibles.removeChild(collectibles.firstChild);
             }
 
-            // Перезапускаем таймер
             timerInterval = setInterval(updateTimer, 1000);
-            // Включаем создание объектов
             setInterval(spawnRandomCollectible, Math.random() * 4000 + 1000);
         }
 
-        // Функция для обновления таймера
         function updateTimer() {
             if (timeLeft > 0 && !gameOver) {
                 timeLeft--;
@@ -151,13 +137,7 @@
             } else {
                 clearInterval(timerInterval);
                 gameOver = true;
-                if (score === 0) {
-                    gameOverText.classList.add("red");
-                    gameOverText.innerText = "Ну, бывает...";
-                } else {
-                    gameOverText.classList.remove("red");
-                    gameOverText.innerText = `Неплохо! Очки: ${score}`;
-                }
+                gameOverText.innerText = score === 0 ? "Ну, бывает..." : `Неплохо! Очки: ${score}`;
                 gameOverText.style.display = "block";
                 restartButton.style.display = "block";
             }
@@ -166,33 +146,19 @@
         function createCollectible(x, z) {
             if (gameOver) return;
             let obj = document.createElement("a-entity");
-            obj.setAttribute("gltf-model", "model.glb");
+            obj.setAttribute("geometry", "primitive: sphere; radius: 0.3");
+            obj.setAttribute("material", "color: yellow");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
-                    score += 1;
+                    score += 10;
                     scoreText.innerText = `Очки: ${score}`;
-                    new Audio("collect.mp3").play();
                 }
                 obj.remove();
             });
             collectibles.appendChild(obj);
         }
-
-        // Ограничение движения игрока
-        const PLATFORM_SIZE = 10;
-
-        function constrainPlayerPosition() {
-            let position = player.getAttribute("position");
-            if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
-            if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
-            if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
-            if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
-            player.setAttribute("position", position);
-        }
-
-        setInterval(constrainPlayerPosition, 16); // 60 FPS
 
         function spawnRandomCollectible() {
             const x = Math.random() * 8 - 4;
@@ -201,7 +167,6 @@
         }
 
         restartButton.addEventListener("click", restartGame);
-
         restartGame();
     </script>
 </body>
