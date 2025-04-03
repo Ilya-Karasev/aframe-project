@@ -78,6 +78,18 @@
         const gameOverText = document.getElementById("gameOver");
         const restartButton = document.getElementById("restartButton");
 
+        // Свободный поворот камеры
+        let yaw = 0, pitch = 0;
+        const sensitivity = 0.2;
+        document.addEventListener("mousemove", (event) => {
+            yaw -= event.movementX * sensitivity;
+            pitch -= event.movementY * sensitivity;
+            pitch = Math.max(-90, Math.min(90, pitch)); // Ограничиваем угол наклона камеры
+            
+            player.setAttribute("rotation", 0 ${yaw} 0);
+            camera.setAttribute("rotation", ${pitch} 0 0);
+        });
+
         function restartGame() {
             score = 0;
             timeLeft = 30;
@@ -158,7 +170,7 @@
             houseEntity.appendChild(house);
         }
 
-                // Ограничение движения игрока
+        // Ограничение движения игрока
         const PLATFORM_SIZE = 10;
 
         function constrainPlayerPosition() {
