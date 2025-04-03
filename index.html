@@ -167,6 +167,38 @@
         restartButton.addEventListener("click", restartGame);
 
         restartGame();
+
+            let isMouseDown = false;
+            let prevMouseX = 0;
+            let prevMouseY = 0;
+            let rotation = { x: 0, y: 0 };
+        
+            document.addEventListener("mousedown", (event) => {
+                isMouseDown = true;
+                prevMouseX = event.clientX;
+                prevMouseY = event.clientY;
+            });
+        
+            document.addEventListener("mouseup", () => {
+                isMouseDown = false;
+            });
+        
+            document.addEventListener("mousemove", (event) => {
+                if (!isMouseDown) return;
+        
+                const sensitivity = 0.2;
+                const deltaX = event.clientX - prevMouseX;
+                const deltaY = event.clientY - prevMouseY;
+        
+                rotation.y -= deltaX * sensitivity;
+                rotation.x -= deltaY * sensitivity;
+                rotation.x = Math.max(-90, Math.min(90, rotation.x)); // Ограничение вертикального угла
+        
+                player.setAttribute("rotation", `${rotation.x} ${rotation.y} 0`);
+        
+                prevMouseX = event.clientX;
+                prevMouseY = event.clientY;
+            });
     </script>
 </body>
 </html>
