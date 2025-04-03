@@ -103,11 +103,11 @@
         // Отключаем стандартное контекстное меню
         document.addEventListener("contextmenu", (event) => event.preventDefault());
         
-        // Прыжок по правой кнопке мыши
-        document.addEventListener("mousedown", (event) => {
-            if (event.button === 2 && isGrounded) { // Проверяем, что нажата правая кнопка (button === 2)
-                let velocity = player.getAttribute("velocity") || { x: 0, y: 0, z: 0 };
-                player.setAttribute("velocity", { x: velocity.x, y: 5, z: velocity.z }); // Прыжок
+        // Прыжок по пробелу
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Space" && isGrounded) {
+                let velocity = player.getAttribute("velocity");
+                player.setAttribute("velocity", {x: velocity.x, y: 5, z: velocity.z}); // Прыжок
                 isGrounded = false; // Пока в воздухе — нельзя прыгать снова
             }
         });
