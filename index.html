@@ -61,6 +61,13 @@
             </a-entity>
         </a-entity>
 
+        <!-- Игрок с физикой -->
+        <a-entity id="player" position="0 1.6 0" wasd-controls dynamic-body>
+            <a-entity id="camera" camera position="0 0 0">
+                <a-cursor></a-cursor>
+            </a-entity>
+        </a-entity>
+
         <!-- Небо -->
         <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
         
@@ -85,6 +92,23 @@
         const player = document.getElementById("player");
         const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
+
+        let isGrounded = false; // Флаг, стоит ли игрок на земле
+
+        // Проверка, находится ли игрок на земле
+        player.addEventListener("collide", (e) => {
+            if (e.detail.body.el.tagName === "A-PLANE") {
+                isGrounded = true;
+            }
+        });
+
+        // Прыжок по нажатию на пробел
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Space" && isGrounded) {
+                player.body.applyImpulse(new CANNON.Vec3(0, 5, 0), new CANNON.Vec3(0, 0, 0));
+                isGrounded = false; // Запрещаем повторный прыжок до приземления
+            }
+        });
 
         // Свободный поворот камеры
         let yaw = 0, pitch = 0;
