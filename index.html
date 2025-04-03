@@ -26,8 +26,8 @@
             z-index: 100;
             display: none;
         }
-        #gameOver.green {
-            color: green;
+        #gameOver.red {
+            color: red;
         }
         #restartButton {
             position: absolute;
@@ -69,30 +69,49 @@
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
-        <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light>
+        <a-light type="point" position="0 5 0" intensity="2" color="#ff6600"></a-light> <!-- Точечный свет -->
+        <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light> <!-- Ambient свет для общего освещения -->
 
-        <!-- Забор по краям платформы -->
-        <a-entity position="-5 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-        <a-entity position="5 0 0" rotation="0 90 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-        <a-entity position="0 0 -5" rotation="0 0 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-        <a-entity position="0 0 5" rotation="0 180 0" scale="1 1 20" gltf-model="url(fence.gltf)"></a-entity>
-
-        <!-- Контейнер для объектов -->
+        <!-- Сборные объекты -->
         <a-entity id="collectibles"></a-entity>
-        <a-entity id="house" visible="false"></a-entity>
     </a-scene>
 
     <script>
         let score = 0;
-        let totalCoins = 0;
         let timeLeft = 30;
         let gameOver = false;
         const collectibles = document.getElementById("collectibles");
-        const house = document.getElementById("house");
         const scoreText = document.getElementById("scoreText");
         const timerText = document.getElementById("timerText");
         const gameOverText = document.getElementById("gameOver");
+        const player = document.getElementById("player");
+        const camera = document.getElementById("camera");
         const restartButton = document.getElementById("restartButton");
+
+        // Физика прыжка
+        let isJumping = false;
+        let jumpPower = 5;
+        let isOnGround = true;
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Space" && isOnGround) {
+                isJumping = true;
+                let playerBody = player.components["dynamic-body"];
+                if (playerBody) {
+                    // Применяем силу для прыжка
+                    playerBody.body.applyForce(new CANNON.Vec3(0, jumpPower, 0), playerBody.body.position);
+                    isOnGround = false;  // Запрещаем повторный прыжок, пока игрок в воздухе
+                }
+            }
+        });
+
+        // Обрабатываем столкновение с землей
+        player.addEventListener("collide", function (e) {
+            if (e.detail.body.id === "ground") {
+                isOnGround = true;  // Разрешаем следующий прыжок
+                isJumping = false;
+            }
+        });
 
         // Свободный поворот камеры
         let yaw = 0, pitch = 0;
@@ -106,65 +125,66 @@
             camera.setAttribute("rotation", ${pitch} 0 0);
         });
 
+        // Функция для начала новой игры
         function restartGame() {
             score = 0;
             timeLeft = 30;
             gameOver = false;
-            totalCoins = Math.floor(Math.random() * 8) + 3; // 3-10 монет
-            scoreText.innerText = `Очки: ${score}/${totalCoins}`;
-            timerText.innerText = `Время: ${timeLeft}`;
+            scoreText.innerText = Очки: ${score};
+            timerText.innerText = Время: ${timeLeft};
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
-
-            // Очистка объектов
+            
+            // Очищаем все объекты на платформе
             while (collectibles.firstChild) {
                 collectibles.removeChild(collectibles.firstChild);
             }
-            house.setAttribute("visible", "false");
 
-            // Генерация монет
-            for (let i = 0; i < totalCoins; i++) {
-                spawnRandomCollectible();
-            }
-
-            // Запуск таймера
+            // Перезапускаем таймер
             timerInterval = setInterval(updateTimer, 1000);
+            // Включаем создание объектов
+            setInterval(spawnRandomCollectible, Math.random() * 4000 + 1000);
         }
 
+        // Функция для обновления таймера
         function updateTimer() {
             if (timeLeft > 0 && !gameOver) {
                 timeLeft--;
-                timerText.innerText = `Время: ${timeLeft}`;
-            } else if (!gameOver) {
-                endGame(false);
+                timerText.innerText = Время: ${timeLeft};
+            } else {
+                clearInterval(timerInterval);
+                gameOver = true;
+                if (score === 0) {
+                    gameOverText.classList.add("red");
+                    gameOverText.innerText = "Ну, бывает...";
+                } else {
+                    gameOverText.classList.remove("red");
+                    gameOverText.innerText = Неплохо! Очки: ${score};
+                }
+                gameOverText.style.display = "block";
+                restartButton.style.display = "block";
             }
         }
 
         function createCollectible(x, z) {
+            if (gameOver) return;
             let obj = document.createElement("a-entity");
-            obj.setAttribute("gltf-model", "coin.gltf");
-            obj.setAttribute("position", `${x} 0.5 ${z}`);
+            obj.setAttribute("gltf-model", "model.glb");
+            obj.setAttribute("position", ${x} 0.5 ${z});
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
                     score += 1;
-                    scoreText.innerText = `Очки: ${score}/${totalCoins}`;
+                    scoreText.innerText = Очки: ${score};
                     new Audio("collect.mp3").play();
-                    obj.remove();
-
-                    if (score === totalCoins) {
-                        spawnHouse();
-                    }
                 }
+                obj.remove();
             });
             collectibles.appendChild(obj);
         }
 
-        function spawnRandomCollectible() {
-            const x = Math.random() * 8 - 4;
-            const z = Math.random() * 8 - 4;
-            createCollectible(x, z);
-        }
+        // Ограничение движения игрока
+        const PLATFORM_SIZE = 10;
 
         function constrainPlayerPosition() {
             let position = player.getAttribute("position");
@@ -177,32 +197,10 @@
 
         setInterval(constrainPlayerPosition, 16); // 60 FPS
 
-        function spawnHouse() {
-            let x = Math.random() * 6 - 3;
-            let z = Math.random() * 6 - 3;
-            house.setAttribute("gltf-model", "model.gltf");
-            house.setAttribute("position", `${x} 0 ${z}`);
-            house.setAttribute("visible", "true");
-
-            house.addEventListener("collide", function (e) {
-                if (e.detail.body.el.id === "player") {
-                    endGame(true);
-                }
-            });
-        }
-
-        function endGame(isWin) {
-            clearInterval(timerInterval);
-            gameOver = true;
-            if (isWin) {
-                gameOverText.classList.add("green");
-                gameOverText.innerText = "Поздравляем! Вы выиграли!";
-            } else {
-                gameOverText.classList.remove("green");
-                gameOverText.innerText = "Время вышло!";
-            }
-            gameOverText.style.display = "block";
-            restartButton.style.display = "block";
+        function spawnRandomCollectible() {
+            const x = Math.random() * 8 - 4;
+            const z = Math.random() * 8 - 4;
+            createCollectible(x, z);
         }
 
         restartButton.addEventListener("click", restartGame);
