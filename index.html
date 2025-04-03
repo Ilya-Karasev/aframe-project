@@ -86,6 +86,35 @@
         const player = document.getElementById("player");
         const restartButton = document.getElementById("restartButton");
 
+                // Физика прыжка
+        let isJumping = false;
+        let jumpPower = 5;
+        const playerBody = player.getAttribute("dynamic-body");
+
+        document.addEventListener("keydown", (event) => {
+            if (event.code === "Space" && !isJumping) {
+                isJumping = true;
+                let position = player.getAttribute("position");
+                position.y += jumpPower;
+                player.setAttribute("position", position);
+                setTimeout(() => {
+                    isJumping = false; // Завершаем прыжок через 1 секунду
+                }, 1000); 
+            }
+        });
+
+        // Свободный поворот камеры
+        let yaw = 0, pitch = 0;
+        const sensitivity = 0.2;
+        document.addEventListener("mousemove", (event) => {
+            yaw -= event.movementX * sensitivity;
+            pitch -= event.movementY * sensitivity;
+            pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
+            
+            player.setAttribute("rotation", 0 ${yaw} 0);
+            camera.setAttribute("rotation", ${pitch} 0 0);
+        });
+
         function restartGame() {
             score = 0;
             timeLeft = 30;
@@ -119,7 +148,7 @@
 
         function createCollectible(x, z) {
             let obj = document.createElement("a-entity");
-            obj.setAttribute("gltf-model", "coin.glb");
+            obj.setAttribute("gltf-model", "coin.gltf");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
 
@@ -180,6 +209,20 @@
             gameOverText.style.display = "block";
             restartButton.style.display = "block";
         }
+
+        // Ограничение движения игрока
+        const PLATFORM_SIZE = 10;
+
+        function constrainPlayerPosition() {
+            let position = player.getAttribute("position");
+            if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
+            if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
+            if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
+            if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
+            player.setAttribute("position", position);
+        }
+
+        setInterval(constrainPlayerPosition, 16); // 60 FPS
 
         restartButton.addEventListener("click", restartGame);
 
