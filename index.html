@@ -54,15 +54,20 @@
     <button id="restartButton">Попробовать еще раз</button>
 
     <a-scene physics="gravity: -9.8">
-        <!-- Игрок с физическим телом -->
+        <!-- Игрок с физикой и WASD-управлением -->
         <a-entity id="player" position="0 1.6 0" wasd-controls dynamic-body>
             <a-entity id="camera" camera position="0 0 0">
                 <a-cursor></a-cursor>
             </a-entity>
         </a-entity>
 
-        <!-- Платформа -->
-        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20" material="color: green" static-body></a-plane>
+        <!-- Земля с физикой -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="20" height="20"
+                 material="src: url(ground-texture.jpg); repeat: 5 5;"
+                 static-body></a-plane>
+
+        <!-- Небо -->
+        <a-sky src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg"></a-sky>
 
         <!-- Свет -->
         <a-light type="directional" position="2 4 3" intensity="1"></a-light>
@@ -75,42 +80,40 @@
         let score = 0;
         let timeLeft = 30;
         let gameOver = false;
-        const player = document.getElementById("player");
-        const camera = document.getElementById("camera");
+        let canJump = false; // Флаг, можно ли прыгать
         const collectibles = document.getElementById("collectibles");
         const scoreText = document.getElementById("scoreText");
         const timerText = document.getElementById("timerText");
         const gameOverText = document.getElementById("gameOver");
+        const player = document.getElementById("player");
         const restartButton = document.getElementById("restartButton");
 
-        let isGrounded = false;
+        // Свободный поворот камеры
+        let yaw = 0, pitch = 0;
+        const sensitivity = 0.2;
+        document.addEventListener("mousemove", (event) => {
+            yaw -= event.movementX * sensitivity;
+            pitch -= event.movementY * sensitivity;
+            pitch = Math.max(-180, Math.min(180, pitch));
 
-        // Обработчик столкновений (проверяем, на земле ли игрок)
-        player.addEventListener("collide", (e) => {
-            if (e.detail.body.el.tagName === "A-PLANE") {
-                isGrounded = true;
-            }
+            player.setAttribute("rotation", `0 ${yaw} 0`);
+            camera.setAttribute("rotation", `${pitch} 0 0`);
         });
 
-        // Прыжок при нажатии на Space
+        // Обработчик клавиатуры для прыжка
         document.addEventListener("keydown", (event) => {
-            if (event.code === "Space" && isGrounded) {
-                player.setAttribute("velocity", "0 5 0");
-                isGrounded = false; // Запрещаем повторный прыжок до касания земли
+            if (event.code === "Space" && canJump) {
+                player.body.applyImpulse(new CANNON.Vec3(0, 5, 0), player.body.position);
+                canJump = false; // Запрещаем повторный прыжок, пока не приземлился
             }
         });
 
-        // Ограничение движения игрока
-        const PLATFORM_SIZE = 10;
-        function constrainPlayerPosition() {
-            let position = player.getAttribute("position");
-            if (position.x > PLATFORM_SIZE) position.x = PLATFORM_SIZE;
-            if (position.x < -PLATFORM_SIZE) position.x = -PLATFORM_SIZE;
-            if (position.z > PLATFORM_SIZE) position.z = PLATFORM_SIZE;
-            if (position.z < -PLATFORM_SIZE) position.z = -PLATFORM_SIZE;
-            player.setAttribute("position", position);
-        }
-        setInterval(constrainPlayerPosition, 16);
+        // Обработчик соприкосновения с землёй
+        player.addEventListener("collide", (event) => {
+            if (event.detail.body.el.tagName === "A-PLANE") {
+                canJump = true; // Разрешаем прыжок
+            }
+        });
 
         // Функция для начала новой игры
         function restartGame() {
@@ -121,7 +124,7 @@
             timerText.innerText = `Время: ${timeLeft}`;
             gameOverText.style.display = "none";
             restartButton.style.display = "none";
-
+            
             while (collectibles.firstChild) {
                 collectibles.removeChild(collectibles.firstChild);
             }
@@ -130,6 +133,7 @@
             setInterval(spawnRandomCollectible, Math.random() * 4000 + 1000);
         }
 
+        // Функция для обновления таймера
         function updateTimer() {
             if (timeLeft > 0 && !gameOver) {
                 timeLeft--;
@@ -138,6 +142,7 @@
                 clearInterval(timerInterval);
                 gameOver = true;
                 gameOverText.innerText = score === 0 ? "Ну, бывает..." : `Неплохо! Очки: ${score}`;
+                gameOverText.classList.toggle("red", score === 0);
                 gameOverText.style.display = "block";
                 restartButton.style.display = "block";
             }
@@ -146,14 +151,14 @@
         function createCollectible(x, z) {
             if (gameOver) return;
             let obj = document.createElement("a-entity");
-            obj.setAttribute("geometry", "primitive: sphere; radius: 0.3");
-            obj.setAttribute("material", "color: yellow");
+            obj.setAttribute("gltf-model", "model.glb");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
             obj.classList.add("collectible");
             obj.addEventListener("click", () => {
                 if (!gameOver) {
-                    score += 10;
+                    score += 1;
                     scoreText.innerText = `Очки: ${score}`;
+                    new Audio("collect.mp3").play();
                 }
                 obj.remove();
             });
