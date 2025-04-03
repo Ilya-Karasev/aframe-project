@@ -111,8 +111,8 @@
             pitch -= event.movementY * sensitivity;
             pitch = Math.max(-180, Math.min(180, pitch)); // Ограничиваем угол наклона камеры
             
-            player.setAttribute("rotation", 0 ${yaw} 0);
-            camera.setAttribute("rotation", ${pitch} 0 0);
+            player.setAttribute("rotation", `0 ${yaw} 0`);
+            camera.setAttribute("rotation", `${pitch} 0 0`);
         });
 
         function restartGame() {
@@ -150,8 +150,9 @@
             let obj = document.createElement("a-entity");
             obj.setAttribute("gltf-model", "coin.gltf");
             obj.setAttribute("position", `${x} 0.5 ${z}`);
+            obj.setAttribute("dynamic-body", ""); // Добавляем физическое тело
             obj.classList.add("collectible");
-
+        
             obj.addEventListener("click", () => {
                 if (!gameOver) {
                     collectedCoins++;
@@ -159,13 +160,13 @@
                     scoreText.innerText = `Очки: ${score}`;
                     new Audio("collect.mp3").play();
                     obj.remove();
-
+        
                     if (collectedCoins === totalCoins) {
                         spawnHouse();
                     }
                 }
             });
-
+        
             collectibles.appendChild(obj);
         }
 
@@ -178,19 +179,20 @@
         function spawnHouse() {
             if (houseSpawned) return;
             houseSpawned = true;
-
+        
             const houseEntity = document.createElement("a-entity");
             houseEntity.setAttribute("gltf-model", "model.gltf");
             houseEntity.setAttribute("position", "0 0 8");
             houseEntity.setAttribute("scale", "2 2 2");
+            houseEntity.setAttribute("static-body", ""); // Добавляем статическое тело
             houseEntity.setAttribute("class", "house");
-
+        
             houseEntity.addEventListener("click", () => {
                 if (collectedCoins === totalCoins) {
                     endGame(true);
                 }
             });
-
+        
             house.appendChild(houseEntity);
         }
 
